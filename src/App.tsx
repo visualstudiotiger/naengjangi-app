@@ -8,6 +8,7 @@ import { BottomNav, type TabKey } from "./components/BottomNav/BottomNav";
 import { RecipesScreen } from "./screens/RecipesScreen/RecipesScreen";
 import { CartScreen } from "./screens/CartScreen/CartScreen";
 import { ReceiptFlow } from "./screens/ReceiptFlow/ReceiptFlow";
+import { ShopScreen } from "./screens/ShopScreen/ShopScreen";
 import styles from "./App.module.css";
 
 /**
@@ -81,7 +82,14 @@ function PlaceholderScreen({ label }: { label: string }) {
   );
 }
 
-function CurrentScreen({ tab, onUploadReceipt }: { tab: TabKey; onUploadReceipt: () => void }) {
+interface ScreenProps {
+  tab: TabKey;
+  onUploadReceipt: () => void;
+  beans: number;
+  onPurchase: (price: number) => void;
+}
+
+function CurrentScreen({ tab, onUploadReceipt, beans, onPurchase }: ScreenProps) {
   switch (tab) {
     case "home":
       return <HomeScreen onUploadReceipt={onUploadReceipt} />;
@@ -89,6 +97,8 @@ function CurrentScreen({ tab, onUploadReceipt }: { tab: TabKey; onUploadReceipt:
       return <RecipesScreen />;
     case "cart":
       return <CartScreen />;
+    case "shop":
+      return <ShopScreen beans={beans} onPurchase={onPurchase} />;
     default:
       return <PlaceholderScreen label="상점" />;
   }
@@ -107,7 +117,12 @@ function App() {
       </header>
 
       <main className={styles.main}>
-        <CurrentScreen tab={tab} onUploadReceipt={() => setReceiptOpen(true)} />
+        <CurrentScreen
+          tab={tab}
+          onUploadReceipt={() => setReceiptOpen(true)}
+          beans={beans}
+          onPurchase={(price) => setBeans((prev) => prev - price)}
+        />
       </main>
 
       <BottomNav active={tab} onChange={setTab} />
