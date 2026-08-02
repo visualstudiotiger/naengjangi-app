@@ -6,6 +6,7 @@ import { Button } from "./components/Button/Button";
 import { NaengjangiCharacter } from "./components/Character/NaengjangiCharacter";
 import { BottomNav, type TabKey } from "./components/BottomNav/BottomNav";
 import { RecipesScreen } from "./screens/RecipesScreen/RecipesScreen";
+import { CartScreen } from "./screens/CartScreen/CartScreen";
 import styles from "./App.module.css";
 
 /**
@@ -74,19 +75,16 @@ function PlaceholderScreen({ label }: { label: string }) {
   );
 }
 
-const SCREEN_LABEL: Record<"cart" | "shop", string> = {
-  cart: "장바구니",
-  shop: "상점",
-};
-
 function CurrentScreen({ tab }: { tab: TabKey }) {
   switch (tab) {
     case "home":
       return <HomeScreen />;
     case "recipes":
       return <RecipesScreen />;
+    case "cart":
+      return <CartScreen />;
     default:
-      return <PlaceholderScreen label={SCREEN_LABEL[tab]} />;
+      return <PlaceholderScreen label="상점" />;
   }
 }
 
