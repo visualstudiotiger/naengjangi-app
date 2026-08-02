@@ -1,0 +1,13 @@
+/* 흰 배경 + 뉴트럴 테두리(0.5px), 그림자 미사용 — 플랫하고 차분한 인상 유지 */
+.card {
+  padding: var(--space-card-padding);
+  background-color: var(--color-surface);
+  border: var(--border-width-card) solid var(--color-border);
+  border-radius: var(--radius-card-lg);
+}
+
+/* 캐릭터 카드 등 강조 표면 */
+.muted {
+  background-color: var(--color-surface-muted);
+  border-color: transparent;
+}
