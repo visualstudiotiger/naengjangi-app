@@ -7,6 +7,7 @@ import { NaengjangiCharacter } from "./components/Character/NaengjangiCharacter"
 import { BottomNav, type TabKey } from "./components/BottomNav/BottomNav";
 import { RecipesScreen } from "./screens/RecipesScreen/RecipesScreen";
 import { CartScreen } from "./screens/CartScreen/CartScreen";
+import { ReceiptFlow } from "./screens/ReceiptFlow/ReceiptFlow";
 import styles from "./App.module.css";
 
 /**
@@ -26,7 +27,7 @@ const RECOMMENDED_RECIPES: {
   { id: 2, name: "순두부찌개", meta: "20분 · 재료 6개", tone: "warning", status: "2개 부족" },
 ];
 
-function HomeScreen() {
+function HomeScreen({ onUploadReceipt }: { onUploadReceipt: () => void }) {
   return (
     <>
       <Card muted className={styles.characterCard}>
@@ -58,7 +59,12 @@ function HomeScreen() {
       ))}
 
       <div className={styles.ctaWrap}>
-        <Button variant="primary" fullWidth icon={<IconCamera size={20} stroke={1.75} />}>
+        <Button
+          variant="primary"
+          fullWidth
+          icon={<IconCamera size={20} stroke={1.75} />}
+          onClick={onUploadReceipt}
+        >
           영수증 업로드
         </Button>
       </div>
@@ -75,10 +81,10 @@ function PlaceholderScreen({ label }: { label: string }) {
   );
 }
 
-function CurrentScreen({ tab }: { tab: TabKey }) {
+function CurrentScreen({ tab, onUploadReceipt }: { tab: TabKey; onUploadReceipt: () => void }) {
   switch (tab) {
     case "home":
-      return <HomeScreen />;
+      return <HomeScreen onUploadReceipt={onUploadReceipt} />;
     case "recipes":
       return <RecipesScreen />;
     case "cart":
@@ -90,19 +96,31 @@ function CurrentScreen({ tab }: { tab: TabKey }) {
 
 function App() {
   const [tab, setTab] = useState<TabKey>("home");
+  const [beans, setBeans] = useState(320);
+  const [receiptOpen, setReceiptOpen] = useState(false);
 
   return (
     <div className={styles.app}>
       <header className={styles.header}>
         <h1 className={styles.title}>냉장이</h1>
-        <span className={styles.beans}>🫘 콩알 320</span>
+        <span className={styles.beans}>🫘 콩알 {beans}</span>
       </header>
 
       <main className={styles.main}>
-        <CurrentScreen tab={tab} />
+        <CurrentScreen tab={tab} onUploadReceipt={() => setReceiptOpen(true)} />
       </main>
 
       <BottomNav active={tab} onChange={setTab} />
+
+      {receiptOpen && (
+        <ReceiptFlow
+          onClose={() => setReceiptOpen(false)}
+          onComplete={(_addedCount, earnedBeans) => {
+            setBeans((prev) => prev + earnedBeans);
+            setReceiptOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }

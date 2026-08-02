@@ -1,0 +1,241 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  background-color: var(--color-background);
+}
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: var(--layout-max-width);
+  height: 100%;
+}
+
+/* 헤더 */
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  border-bottom: var(--border-width-card) solid var(--color-border);
+}
+
+.headTitle {
+  font-size: var(--font-size-section);
+  font-weight: var(--font-weight-medium);
+}
+
+.closeBtn {
+  display: grid;
+  place-items: center;
+  padding: var(--space-1);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+}
+
+.content {
+  flex: 1;
+  padding: var(--space-4);
+  overflow-y: auto;
+}
+
+/* select 단계 */
+.selectStep {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.dropZone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  background-color: var(--color-surface-muted);
+  border: 1.5px dashed var(--color-border-dashed);
+  border-radius: var(--radius-card-lg);
+}
+
+.dropIcon {
+  color: var(--color-mint-deep);
+}
+
+.dropText {
+  font-size: var(--font-size-body-sm);
+  color: var(--color-text-secondary);
+}
+
+.fileInput {
+  display: none;
+}
+
+.demoLink {
+  align-self: center;
+  padding: var(--space-2);
+  font-size: var(--font-size-body-sm);
+  color: var(--color-text-secondary);
+  text-decoration: underline;
+  background: transparent;
+  border: none;
+}
+
+/* processing 단계 */
+.processing {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-6) 0;
+  font-size: var(--font-size-list-title);
+  color: var(--color-text-primary);
+  text-align: center;
+}
+
+.spinner {
+  color: var(--color-mint-deep);
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.processingSub {
+  font-size: var(--font-size-sub);
+  color: var(--color-text-muted);
+}
+
+/* review 단계 */
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.reviewCaption {
+  font-size: var(--font-size-body-sm);
+  color: var(--color-text-secondary);
+}
+
+.reviewCaption b {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.itemList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.itemRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background-color: var(--color-surface);
+  border: var(--border-width-card) solid var(--color-border);
+  border-radius: var(--radius-card-sm);
+}
+
+.itemTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rawText {
+  font-size: var(--font-size-sub);
+  color: var(--color-text-muted);
+}
+
+.removeBtn {
+  display: grid;
+  place-items: center;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: none;
+}
+
+.itemBottom {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.nameInput {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  background-color: var(--color-background);
+  border: var(--border-width-card) solid var(--color-border);
+  border-radius: var(--radius-badge);
+}
+
+.nameInput:focus {
+  outline: 2px solid var(--color-mint-accent);
+  outline-offset: -1px;
+}
+
+.nameInputEmpty {
+  background-color: var(--color-coral-bg);
+  border-color: var(--color-coral-accent);
+}
+
+.warnHint {
+  font-size: var(--font-size-sub);
+  color: var(--color-coral-text);
+}
+
+.footer {
+  margin-top: var(--space-3);
+}
+
+/* done 단계 */
+.done {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-6) 0 var(--space-4);
+  text-align: center;
+}
+
+.doneIcon {
+  color: var(--color-mint-deep);
+}
+
+.doneTitle {
+  margin-top: var(--space-2);
+  font-size: var(--font-size-list-title);
+  font-weight: var(--font-weight-medium);
+}
+
+.beansReward {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-4);
+  font-size: var(--font-size-body-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-coral-text);
+  background-color: var(--color-coral-bg);
+  border-radius: var(--radius-pill);
+}
+
+.done .footer {
+  align-self: stretch;
+  margin-top: var(--space-5);
+}
