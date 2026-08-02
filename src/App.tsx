@@ -5,6 +5,7 @@ import { Badge, type BadgeTone } from "./components/Badge/Badge";
 import { Button } from "./components/Button/Button";
 import { NaengjangiCharacter } from "./components/Character/NaengjangiCharacter";
 import { BottomNav, type TabKey } from "./components/BottomNav/BottomNav";
+import { RecipesScreen } from "./screens/RecipesScreen/RecipesScreen";
 import styles from "./App.module.css";
 
 /**
@@ -73,11 +74,21 @@ function PlaceholderScreen({ label }: { label: string }) {
   );
 }
 
-const SCREEN_LABEL: Record<Exclude<TabKey, "home">, string> = {
-  recipes: "레시피",
+const SCREEN_LABEL: Record<"cart" | "shop", string> = {
   cart: "장바구니",
   shop: "상점",
 };
+
+function CurrentScreen({ tab }: { tab: TabKey }) {
+  switch (tab) {
+    case "home":
+      return <HomeScreen />;
+    case "recipes":
+      return <RecipesScreen />;
+    default:
+      return <PlaceholderScreen label={SCREEN_LABEL[tab]} />;
+  }
+}
 
 function App() {
   const [tab, setTab] = useState<TabKey>("home");
@@ -90,7 +101,7 @@ function App() {
       </header>
 
       <main className={styles.main}>
-        {tab === "home" ? <HomeScreen /> : <PlaceholderScreen label={SCREEN_LABEL[tab]} />}
+        <CurrentScreen tab={tab} />
       </main>
 
       <BottomNav active={tab} onChange={setTab} />

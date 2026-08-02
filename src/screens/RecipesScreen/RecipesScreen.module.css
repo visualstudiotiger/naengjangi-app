@@ -1,0 +1,132 @@
+/* 세그먼트 탭 */
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background-color: var(--color-surface-muted);
+  border-radius: var(--radius-pill);
+}
+
+.tab {
+  flex: 1;
+  padding: var(--space-2) 0;
+  font-size: var(--font-size-body-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-pill);
+}
+
+.tabActive {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-mint-deep);
+  background-color: var(--color-surface);
+}
+
+.caption {
+  margin-top: var(--space-1);
+  font-size: var(--font-size-sub);
+  color: var(--color-text-muted);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-card-gap);
+}
+
+/* 레시피 카드 */
+.recipeCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.recipeHead {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.thumb {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  color: var(--color-mint-deep);
+  background-color: var(--color-mint-bg);
+  border-radius: var(--radius-card-sm);
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  font-size: var(--font-size-list-title);
+  font-weight: var(--font-weight-medium);
+}
+
+.meta {
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+  margin-top: 2px;
+  font-size: var(--font-size-sub);
+  color: var(--color-text-secondary);
+}
+
+.dot {
+  margin: 0 2px;
+}
+
+.badgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+/* 부족한 재료 영역 */
+.missingBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: var(--border-width-card) solid var(--color-border);
+}
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chip {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-sub);
+  color: var(--color-coral-text);
+  background-color: var(--color-coral-bg);
+  border-radius: var(--radius-pill);
+}
+
+.empty {
+  padding: var(--space-6) 0;
+  font-size: var(--font-size-body-sm);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.hint {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-size-body-sm);
+  color: var(--color-coral-text);
+  background-color: var(--color-coral-bg);
+  border-radius: var(--radius-card-sm);
+}
