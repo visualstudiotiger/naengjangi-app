@@ -1,38 +1,36 @@
-import { IconHome, IconChefHat, IconShoppingCart, IconBuildingStore } from "@tabler/icons-react";
+import { NavLink } from "react-router-dom";
+import {
+  IconHome,
+  IconChefHat,
+  IconShoppingCart,
+  IconBuildingStore,
+  type Icon,
+} from "@tabler/icons-react";
 import styles from "./BottomNav.module.css";
 
-const TABS = [
-  { key: "home", label: "홈", Icon: IconHome },
-  { key: "recipes", label: "레시피", Icon: IconChefHat },
-  { key: "cart", label: "장바구니", Icon: IconShoppingCart },
-  { key: "shop", label: "상점", Icon: IconBuildingStore },
-] as const;
+type Tab = { to: string; label: string; Icon: Icon; end?: boolean };
 
-export type TabKey = (typeof TABS)[number]["key"];
+const TABS: Tab[] = [
+  { to: "/", label: "홈", Icon: IconHome, end: true },
+  { to: "/recipes", label: "레시피", Icon: IconChefHat },
+  { to: "/cart", label: "장바구니", Icon: IconShoppingCart },
+  { to: "/shop", label: "상점", Icon: IconBuildingStore },
+];
 
-interface BottomNavProps {
-  active: TabKey;
-  onChange: (key: TabKey) => void;
-}
-
-export function BottomNav({ active, onChange }: BottomNavProps) {
+export function BottomNav() {
   return (
     <nav className={styles.nav} aria-label="주요 메뉴">
-      {TABS.map(({ key, label, Icon }) => {
-        const isActive = key === active;
-        return (
-          <button
-            key={key}
-            type="button"
-            className={`${styles.tab} ${isActive ? styles.active : ""}`}
-            aria-current={isActive ? "page" : undefined}
-            onClick={() => onChange(key)}
-          >
-            <Icon size={22} stroke={1.75} />
-            {label}
-          </button>
-        );
-      })}
+      {TABS.map(({ to, label, Icon, end }) => (
+        <NavLink
+          key={to}
+          to={to}
+          end={end}
+          className={({ isActive }) => `${styles.tab} ${isActive ? styles.active : ""}`}
+        >
+          <Icon size={22} stroke={1.75} />
+          {label}
+        </NavLink>
+      ))}
     </nav>
   );
 }
