@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { OCRScannedItem, Ingredient } from '../types';
 import { SAMPLE_RECEIPT_TEXTS } from '../data/mockData';
-import { scanReceiptLines } from '../utils/ocrToIngredient';
+import { scanReceiptLines, filterItemLines } from '../utils/ocrToIngredient';
+import { recognizeReceipt } from '../utils/ocrRecognize';
 import { Camera, RefreshCw, Sparkles, CheckCircle, Check, FileText } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -21,21 +22,60 @@ export const OcrScanTab: React.FC<OcrScanTabProps> = ({ onAddScannedIngredients,
   const [isScanning, setIsScanning] = useState(false);
   const [scannedItems, setScannedItems] = useState<OCRScannedItem[] | null>(null);
   const [receiptName, setReceiptName] = useState<string>('');
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [statusText, setStatusText] = useState('영수증 이미지를 준비 중…');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const startScan = (sampleIndex = 0) => {
-    setIsScanning(true);
-    setScannedItems(null);
-    setTimeout(() => {
-      const receipt = SAMPLE_RECEIPT_TEXTS[sampleIndex] ?? SAMPLE_RECEIPT_TEXTS[0];
-      setReceiptName(receipt.title);
-      setScannedItems(scanReceiptLines(receipt.lines));
-      setIsScanning(false);
+  const finish = (items: OCRScannedItem[], label: string) => {
+    setReceiptName(label);
+    setScannedItems(items);
+    setIsScanning(false);
+    if (items.some((i) => i.matchConfidence === 'high')) {
       try {
         confetti({ particleCount: 30, spread: 60, origin: { y: 0.7 } });
       } catch {
         /* noop */
       }
-    }, 1600);
+    }
+  };
+
+  /** 실제 사진 → Tesseract OCR → 매칭 */
+  const handleFile = async (file: File) => {
+    setError(null);
+    setProgress(0);
+    setStatusText('OCR 엔진 불러오는 중… (첫 실행은 잠시 걸려요)');
+    setScannedItems(null);
+    setIsScanning(true);
+    try {
+      const lines = await recognizeReceipt(file, (p) => {
+        setProgress(p);
+        setStatusText('영수증 글자 인식 중…');
+      });
+      const items = scanReceiptLines(filterItemLines(lines));
+      if (items.length === 0) {
+        setIsScanning(false);
+        setError('식재료를 찾지 못했어요. 사진이 선명한지 확인하거나 직접 추가해 주세요.');
+        return;
+      }
+      finish(items, '내 영수증 사진');
+    } catch {
+      setIsScanning(false);
+      setError('인식에 실패했어요. 다시 시도하거나 샘플로 확인해 주세요.');
+    }
+  };
+
+  /** 샘플 텍스트로 매칭만 시연 (사진 없이) */
+  const startSampleScan = (sampleIndex = 0) => {
+    setError(null);
+    setIsScanning(true);
+    setScannedItems(null);
+    setStatusText('샘플 영수증 원문을 매칭 중…');
+    setProgress(0);
+    setTimeout(() => {
+      const receipt = SAMPLE_RECEIPT_TEXTS[sampleIndex] ?? SAMPLE_RECEIPT_TEXTS[0];
+      finish(scanReceiptLines(receipt.lines), `${receipt.title} (샘플)`);
+    }, 900);
   };
 
   const patch = (id: string, next: Partial<OCRScannedItem>) =>
@@ -83,8 +123,21 @@ export const OcrScanTab: React.FC<OcrScanTabProps> = ({ onAddScannedIngredients,
 
       {!scannedItems && !isScanning && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleFile(f);
+              e.target.value = '';
+            }}
+          />
+
           <div
-            onClick={() => startScan(0)}
+            onClick={() => fileInputRef.current?.click()}
             style={{ background: 'var(--card-bg)', border: '2px dashed var(--primary-500)', borderRadius: '24px', padding: '36px 20px', textAlign: 'center', cursor: 'pointer', boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}
           >
             <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--primary-50)', color: 'var(--primary-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(16, 185, 129, 0.2)' }}>
@@ -92,28 +145,34 @@ export const OcrScanTab: React.FC<OcrScanTabProps> = ({ onAddScannedIngredients,
             </div>
             <div>
               <div style={{ fontWeight: 800, fontSize: '1.05rem', marginBottom: '4px' }}>영수증 사진 촬영 / 이미지 업로드</div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>이마트, 홈플러스, 쿠팡 로켓프레시 등 모든 종이/모바일 영수증 지원</div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>사진을 올리면 브라우저에서 직접 문자 인식(OCR) 후 식재료로 매칭합니다</div>
             </div>
             <span className="btn-primary" style={{ width: 'auto', padding: '10px 20px', fontSize: '0.85rem' }}>
-              <Camera size={18} /> 영수증 촬영하기
+              <Camera size={18} /> 사진 선택 / 촬영
             </span>
           </div>
 
+          {error && (
+            <div style={{ background: 'rgba(244,63,94,0.08)', border: '1px solid rgba(244,63,94,0.25)', color: '#e11d48', padding: '12px 14px', borderRadius: '14px', fontSize: '0.8rem' }}>
+              {error}
+            </div>
+          )}
+
           <div style={{ background: 'var(--card-bg)', padding: '16px', borderRadius: '18px', border: '1px solid var(--card-border)' }}>
             <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <Sparkles size={14} color="#10b981" /> 샘플 영수증으로 매칭 엔진 테스트:
+              <Sparkles size={14} color="#10b981" /> 사진 없이 샘플 텍스트로 매칭만 체험:
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               {SAMPLE_RECEIPT_TEXTS.map((sample, idx) => (
                 <button
                   key={idx}
-                  onClick={() => startScan(idx)}
+                  onClick={() => startSampleScan(idx)}
                   style={{ padding: '10px', borderRadius: '12px', border: '1px solid var(--card-border)', background: 'rgba(0,0,0,0.02)', fontSize: '0.78rem', fontWeight: 700, textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
                   <FileText size={16} color="var(--primary-600)" />
                   <div>
                     <div>{sample.title}</div>
-                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 400 }}>원문 {sample.lines.length}줄</div>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 400 }}>샘플 원문 {sample.lines.length}줄</div>
                   </div>
                 </button>
               ))}
@@ -125,9 +184,14 @@ export const OcrScanTab: React.FC<OcrScanTabProps> = ({ onAddScannedIngredients,
       {isScanning && (
         <div style={{ background: 'var(--card-bg)', borderRadius: '24px', padding: '40px 20px', textAlign: 'center', border: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
           <RefreshCw size={44} style={{ color: 'var(--primary-500)', animation: 'spin 2s linear infinite' }} />
-          <div>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>영수증 원문을 식재료 사전과 대조 중…</h3>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>텍스트 정규화 ➔ 사전 매칭 ➔ 자소 유사도 ➔ 유통기한 예측</p>
+          <div style={{ width: '100%' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>{statusText}</h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>텍스트 인식 ➔ 사전 매칭 ➔ 자소 유사도 ➔ 유통기한 예측</p>
+            {progress > 0 && (
+              <div style={{ marginTop: '14px', height: '8px', background: 'var(--card-border)', borderRadius: '999px', overflow: 'hidden' }}>
+                <div style={{ width: `${Math.round(progress * 100)}%`, height: '100%', background: 'var(--primary-500)', borderRadius: '999px', transition: 'width 0.2s ease' }} />
+              </div>
+            )}
           </div>
         </div>
       )}

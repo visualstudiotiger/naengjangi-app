@@ -36,6 +36,20 @@ const STORAGE_MAP: Record<DictCategory, StorageType> = {
   음료: 'pantry',
 }
 
+// 영수증에서 품목이 아닌 줄(상호·합계·카드·날짜 등)을 걸러내기 위한 키워드
+const NOISE_KEYWORDS =
+  /합계|소계|총액|총\s*구매|부가세|면세|과세|카드|현금|승인|거래|잔액|포인트|적립|할인|봉투|영수증|사업자|대표|주소|전화|tel|매장|점포|결제|금액|수량|단가|번호|일시|주문|배송/i
+
+/** 진짜 OCR 결과에서 식재료 품목일 법한 줄만 남긴다 (한글 2자 이상, 노이즈 키워드 제외) */
+export function filterItemLines(lines: string[]): string[] {
+  return lines.filter((line) => {
+    const hangul = (line.match(/[가-힣]/g) || []).length
+    if (hangul < 2) return false
+    if (NOISE_KEYWORDS.test(line)) return false
+    return true
+  })
+}
+
 /** 원문에서 수량 토큰 추출 (예: "600g", "1L", "15구", "1단", "1팩") */
 export function extractQuantity(raw: string): string {
   const m = raw.match(/(\d+(?:\.\d+)?)\s*(kg|g|ml|l|개|봉|팩|입|구|단|매|장|모|병|캔|포|줄|ea)/i)
