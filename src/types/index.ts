@@ -21,12 +21,13 @@ export interface Ingredient {
 
 export interface OCRScannedItem {
   id: string;
-  name: string;
+  name: string;          // 매칭된 표준명 (없으면 원문)
+  rawText: string;       // 영수증 원문 라인
+  matchConfidence: 'high' | 'medium' | 'low';
   category: Category;
   storage: StorageType;
   quantity: string;
   suggestedExpiryDays: number;
-  confidence: number;
   selected: boolean;
 }
 
