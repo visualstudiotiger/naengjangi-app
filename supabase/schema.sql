@@ -66,3 +66,69 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- =========================================================
+-- 5. ingredient_dictionary (표준 식재료 사전 — Phase 3)
+-- =========================================================
+create table if not exists public.ingredient_dictionary (
+  id                  uuid primary key default gen_random_uuid(),
+  standard_name       text not null unique,
+  category            text not null,
+  default_expiry_days int  not null default 7,
+  aliases             text[] not null default '{}',
+  created_at          timestamptz not null default now()
+);
+
+alter table public.ingredient_dictionary enable row level security;
+
+create policy "누구나 사전 조회 가능" on public.ingredient_dictionary
+  for select using (true);
+
+-- =========================================================
+-- 6. inventory_items (사용자 보유 식재료 — Phase 3)
+-- =========================================================
+create table if not exists public.inventory_items (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references auth.users (id) on delete cascade,
+  name        text not null,
+  category    text not null,
+  storage     text not null check (storage in ('fridge', 'freezer', 'pantry')),
+  quantity    text not null default '1개',
+  expiry_date date not null,
+  added_date  date not null default current_date,
+  note        text,
+  created_at  timestamptz not null default now()
+);
+
+alter table public.inventory_items enable row level security;
+
+create policy "본인 식재료 조회" on public.inventory_items
+  for select using (auth.uid() = user_id);
+create policy "본인 식재료 생성" on public.inventory_items
+  for insert with check (auth.uid() = user_id);
+create policy "본인 식재료 수정" on public.inventory_items
+  for update using (auth.uid() = user_id);
+create policy "본인 식재료 삭제" on public.inventory_items
+  for delete using (auth.uid() = user_id);
+
+-- =========================================================
+-- 7. recipes (AI 레시피 및 마스터 레시피 — Phase 3)
+-- =========================================================
+create table if not exists public.recipes (
+  id           uuid primary key default gen_random_uuid(),
+  title        text not null,
+  description  text,
+  category     text not null,
+  cooking_time int not null default 15,
+  difficulty   text not null check (difficulty in ('쉬움', '보통', '어려움')),
+  image_url    text,
+  ingredients  jsonb not null default '[]'::jsonb,
+  steps        text[] not null default '{}',
+  created_at   timestamptz not null default now()
+);
+
+alter table public.recipes enable row level security;
+
+create policy "누구나 레시피 조회 가능" on public.recipes
+  for select using (true);
+

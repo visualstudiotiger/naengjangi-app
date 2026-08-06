@@ -1,11 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { Recipe, Ingredient, CartItem, Category } from '../types';
-import { Clock, Flame, ShoppingCart, ChevronRight, X } from 'lucide-react';
+import { Clock, Flame, ShoppingCart, ChevronRight, X, Sparkles, Search } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { matchIngredient } from '../utils/ingredientMatcher';
-
-/** 이름을 표준 식재료명으로 정규화 (매칭 실패 시 원문 유지) */
-const toStandardName = (name: string) => matchIngredient(name).standardName ?? name.trim();
+import { calculateRecipeScores, generateAiCustomRecipe, ProcessedRecipe } from '../utils/aiRecipeEngine';
 
 interface RecipeTabProps {
   recipes: Recipe[];
@@ -26,6 +23,7 @@ export const RecipeTab: React.FC<RecipeTabProps> = ({
 }) => {
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [detailModalRecipe, setDetailModalRecipe] = useState<Recipe | null>(selectedRecipeModal || null);
+  const [aiCustomInput, setAiCustomInput] = useState<string>('');
 
   React.useEffect(() => {
     if (selectedRecipeModal !== undefined) {
@@ -33,34 +31,18 @@ export const RecipeTab: React.FC<RecipeTabProps> = ({
     }
   }, [selectedRecipeModal]);
 
-  // 냉장고 재료를 표준명으로 정규화 (사전 매칭). 재료 변동 시에만 재계산.
-  const fridgeStd = useMemo(
-    () => ingredients.map((i) => ({ ...i, std: toStandardName(i.name) })),
-    [ingredients],
+  const processedRecipes: ProcessedRecipe[] = useMemo(
+    () => calculateRecipeScores(recipes, ingredients),
+    [recipes, ingredients],
   );
 
-  const processedRecipes = useMemo(
-    () =>
-      recipes
-        .map((recipe) => {
-          const ingredientStatus = recipe.ingredients.map((ing) => {
-            const rStd = toStandardName(ing.name);
-            const matchInFridge = fridgeStd.find(
-              (f) =>
-                f.std === rStd || // 표준명 일치 (파프리카 ↔ 피망 등 이표기 포함)
-                f.name.includes(ing.name) ||
-                ing.name.includes(f.name),
-            );
-            return { ...ing, inStock: !!matchInFridge, matchedIngredientId: matchInFridge?.id };
-          });
-
-          const inStockCount = ingredientStatus.filter((i) => i.inStock).length;
-          const matchRate = Math.round((inStockCount / ingredientStatus.length) * 100);
-          return { ...recipe, ingredients: ingredientStatus, matchRate };
-        })
-        .sort((a, b) => b.matchRate - a.matchRate),
-    [recipes, fridgeStd],
-  );
+  const handleGenerateCustomRecipe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!aiCustomInput.trim()) return;
+    const generated = generateAiCustomRecipe(aiCustomInput, ingredients);
+    setDetailModalRecipe(generated);
+    setAiCustomInput('');
+  };
 
   const categories = ['all', '한식/국물', '한식/일품', '양식', '한식/반찬'];
 
@@ -86,7 +68,7 @@ export const RecipeTab: React.FC<RecipeTabProps> = ({
 
     try {
       confetti({ particleCount: 40, spread: 70, origin: { y: 0.8 } });
-    } catch (e) {}
+    } catch {}
 
     onNavigateToCart();
   };
@@ -111,6 +93,26 @@ export const RecipeTab: React.FC<RecipeTabProps> = ({
           현재 남은 식재료를 바탕으로 가장 높은 매칭률의 요리를 AI가 찾아드립니다.
         </p>
       </div>
+
+      {/* AI Custom Recipe Prompt Form */}
+      <form onSubmit={handleGenerateCustomRecipe} style={{ display: 'flex', gap: '8px', background: 'var(--card-bg)', padding: '8px 12px', borderRadius: '16px', border: '1px solid var(--card-border)', boxShadow: 'var(--shadow-sm)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
+          <Search size={16} style={{ color: 'var(--text-muted)' }} />
+          <input
+            type="text"
+            value={aiCustomInput}
+            onChange={(e) => setAiCustomInput(e.target.value)}
+            placeholder="원하는 재료로 AI 맞춤 레시피 생성 (예: 삼겹살, 대파)"
+            style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', fontSize: '0.82rem', color: 'var(--text-color)' }}
+          />
+        </div>
+        <button
+          type="submit"
+          style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--primary-500)', color: 'white', border: 'none', padding: '6px 14px', borderRadius: '12px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}
+        >
+          <Sparkles size={14} /> AI 셰프 추천
+        </button>
+      </form>
 
       {/* Category Pills */}
       <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
@@ -250,7 +252,7 @@ export const RecipeTab: React.FC<RecipeTabProps> = ({
 };
 
 const RecipeCard: React.FC<{
-  recipe: Recipe & { matchRate: number };
+  recipe: ProcessedRecipe;
   onOpenDetail: (recipe: Recipe) => void;
   onAddMissing: (recipe: Recipe) => void;
 }> = ({ recipe, onOpenDetail, onAddMissing }) => {
@@ -275,18 +277,34 @@ const RecipeCard: React.FC<{
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '4px' }}>
               <h3 style={{ fontSize: '1rem', fontWeight: 800 }}>{recipe.title}</h3>
-              <span style={{
-                background: recipe.matchRate >= 80 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                color: recipe.matchRate >= 80 ? '#059669' : '#d97706',
-                fontSize: '0.72rem',
-                fontWeight: 800,
-                padding: '3px 8px',
-                borderRadius: '12px'
-              }}>
-                {recipe.matchRate}% 매칭
-              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                <span style={{
+                  background: recipe.matchRate >= 80 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                  color: recipe.matchRate >= 80 ? '#059669' : '#d97706',
+                  fontSize: '0.72rem',
+                  fontWeight: 800,
+                  padding: '3px 8px',
+                  borderRadius: '12px',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {recipe.matchRate}% 매칭
+                </span>
+                {recipe.urgentMatchCount > 0 && (
+                  <span style={{
+                    background: 'rgba(239, 68, 68, 0.15)',
+                    color: '#dc2626',
+                    fontSize: '0.65rem',
+                    fontWeight: 800,
+                    padding: '2px 6px',
+                    borderRadius: '8px',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    ⚡ 임박재료 {recipe.urgentMatchCount}개 소진
+                  </span>
+                )}
+              </div>
             </div>
 
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px', display: 'flex', gap: '10px' }}>

@@ -48,7 +48,7 @@ export const CartTab: React.FC<CartTabProps> = ({
 
     try {
       confetti({ particleCount: 60, spread: 80, origin: { y: 0.6 } });
-    } catch (e) {}
+    } catch {}
 
     onNavigateToFridge();
   };
