@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Recipe, Ingredient, CartItem, Category } from '../types';
 import { Clock, Flame, ShoppingCart, ChevronRight, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { matchIngredient } from '../utils/ingredientMatcher';
+
+/** 이름을 표준 식재료명으로 정규화 (매칭 실패 시 원문 유지) */
+const toStandardName = (name: string) => matchIngredient(name).standardName ?? name.trim();
 
 interface RecipeTabProps {
   recipes: Recipe[];
@@ -29,27 +33,34 @@ export const RecipeTab: React.FC<RecipeTabProps> = ({
     }
   }, [selectedRecipeModal]);
 
-  const processedRecipes = recipes.map(recipe => {
-    const ingredientStatus = recipe.ingredients.map(ing => {
-      const matchInFridge = ingredients.find(inFridge => 
-        inFridge.name.includes(ing.name) || ing.name.includes(inFridge.name)
-      );
-      return {
-        ...ing,
-        inStock: !!matchInFridge,
-        matchedIngredientId: matchInFridge?.id
-      };
-    });
+  // 냉장고 재료를 표준명으로 정규화 (사전 매칭). 재료 변동 시에만 재계산.
+  const fridgeStd = useMemo(
+    () => ingredients.map((i) => ({ ...i, std: toStandardName(i.name) })),
+    [ingredients],
+  );
 
-    const inStockCount = ingredientStatus.filter(i => i.inStock).length;
-    const matchRate = Math.round((inStockCount / ingredientStatus.length) * 100);
+  const processedRecipes = useMemo(
+    () =>
+      recipes
+        .map((recipe) => {
+          const ingredientStatus = recipe.ingredients.map((ing) => {
+            const rStd = toStandardName(ing.name);
+            const matchInFridge = fridgeStd.find(
+              (f) =>
+                f.std === rStd || // 표준명 일치 (파프리카 ↔ 피망 등 이표기 포함)
+                f.name.includes(ing.name) ||
+                ing.name.includes(f.name),
+            );
+            return { ...ing, inStock: !!matchInFridge, matchedIngredientId: matchInFridge?.id };
+          });
 
-    return {
-      ...recipe,
-      ingredients: ingredientStatus,
-      matchRate
-    };
-  }).sort((a, b) => b.matchRate - a.matchRate);
+          const inStockCount = ingredientStatus.filter((i) => i.inStock).length;
+          const matchRate = Math.round((inStockCount / ingredientStatus.length) * 100);
+          return { ...recipe, ingredients: ingredientStatus, matchRate };
+        })
+        .sort((a, b) => b.matchRate - a.matchRate),
+    [recipes, fridgeStd],
+  );
 
   const categories = ['all', '한식/국물', '한식/일품', '양식', '한식/반찬'];
 
