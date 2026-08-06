@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Ingredient, Recipe } from '../types';
 import { getDDayInfo } from '../utils/dateUtils';
-import { Camera, Plus, Utensils, ArrowRight, ShieldAlert, Sparkles } from 'lucide-react';
+import { Camera, Plus, Utensils, ArrowRight, ShieldAlert, Sparkles, Share2 } from 'lucide-react';
+import { ShareChallengeModal } from './ShareChallengeModal';
 
 interface HomeTabProps {
   ingredients: Ingredient[];
@@ -18,6 +19,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   onSelectRecipe,
   onOpenAddIngredientModal
 }) => {
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   // Expiring items filter (days <= 3)
   const expiringItems = ingredients
     .map(ing => ({ ...ing, dday: getDDayInfo(ing.expiryDate) }))
@@ -54,18 +56,40 @@ export const HomeTab: React.FC<HomeTabProps> = ({
           <Utensils size={160} />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-          <span style={{
-            background: 'rgba(255, 255, 255, 0.25)',
-            backdropFilter: 'blur(8px)',
-            padding: '4px 10px',
-            borderRadius: '20px',
-            fontSize: '0.75rem',
-            fontWeight: 700
-          }}>
-            냉장이 AI
-          </span>
-          <span style={{ fontSize: '0.75rem', opacity: 0.9 }}>스마트 식재료 관리</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{
+              background: 'rgba(255, 255, 255, 0.25)',
+              backdropFilter: 'blur(8px)',
+              padding: '4px 10px',
+              borderRadius: '20px',
+              fontSize: '0.75rem',
+              fontWeight: 700
+            }}>
+              냉장이 AI
+            </span>
+            <span style={{ fontSize: '0.75rem', opacity: 0.9 }}>스마트 식재료 관리</span>
+          </div>
+
+          <button
+            onClick={() => setIsShareModalOpen(true)}
+            style={{
+              background: 'rgba(255,255,255,0.2)',
+              border: 'none',
+              color: 'white',
+              borderRadius: '14px',
+              padding: '4px 10px',
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+            }}
+          >
+            <Share2 size={13} /> 챌린지 성과 공유
+          </button>
         </div>
 
         <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '6px' }}>
@@ -316,6 +340,13 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         </div>
       )}
 
+      {/* Share Challenge Modal */}
+      {isShareModalOpen && (
+        <ShareChallengeModal
+          ingredients={ingredients}
+          onClose={() => setIsShareModalOpen(false)}
+        />
+      )}
     </div>
   );
 };
