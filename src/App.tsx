@@ -23,6 +23,7 @@ import { AddIngredientModal } from './components/AddIngredientModal'
 import { ShopScreen } from './components/ShopScreen'
 import { LoginScreen } from './components/LoginScreen'
 import { MyPageScreen } from './components/MyPageScreen'
+import { SeoHead } from './components/SeoHead'
 import ProtectedRoute from './auth/ProtectedRoute'
 import { useAppContext, type AppOutletContext } from './layout/outletContext'
 
@@ -219,28 +220,34 @@ function HomeRoute() {
   const ctx = useAppContext()
   const navigate = useNavigate()
   return (
-    <HomeTab
-      ingredients={ctx.ingredients}
-      recipes={ctx.recipes}
-      onNavigateTab={(tab) => navigate(`/${tab}`)}
-      onSelectRecipe={(recipe) => {
-        ctx.setSelectedRecipeModal(recipe)
-        navigate('/recipe')
-      }}
-      onOpenAddIngredientModal={() => ctx.openAddIngredient(null)}
-    />
+    <>
+      <SeoHead title="홈" description="스마트 냉장고 관리 및 D-Day 유통기한 알림 대시보드" />
+      <HomeTab
+        ingredients={ctx.ingredients}
+        recipes={ctx.recipes}
+        onNavigateTab={(tab) => navigate(`/${tab}`)}
+        onSelectRecipe={(recipe: Recipe) => {
+          ctx.setSelectedRecipeModal(recipe)
+          navigate('/recipe')
+        }}
+        onOpenAddIngredientModal={() => ctx.openAddIngredient(null)}
+      />
+    </>
   )
 }
 
 function FridgeRoute() {
   const ctx = useAppContext()
   return (
-    <FridgeTab
-      ingredients={ctx.ingredients}
-      onAddIngredient={() => ctx.openAddIngredient(null)}
-      onEditIngredient={(item) => ctx.openAddIngredient(item)}
-      onDeleteIngredient={ctx.deleteIngredient}
-    />
+    <>
+      <SeoHead title="내 냉장고" description="보유 식재료 CRUD, 보관장소별(냉장/냉동/실온) 분류 및 유통기한 D-Day 관리" />
+      <FridgeTab
+        ingredients={ctx.ingredients}
+        onAddIngredient={() => ctx.openAddIngredient(null)}
+        onEditIngredient={(item) => ctx.openAddIngredient(item)}
+        onDeleteIngredient={ctx.deleteIngredient}
+      />
+    </>
   )
 }
 
@@ -248,10 +255,13 @@ function OcrRoute() {
   const ctx = useAppContext()
   const navigate = useNavigate()
   return (
-    <OcrScanTab
-      onAddScannedIngredients={ctx.addScanned}
-      onNavigateToFridge={() => navigate('/fridge')}
-    />
+    <>
+      <SeoHead title="영수증 OCR 스캔" description="영수증 사진 스캔으로 식재료 자동 등록 및 유통기한 예측" />
+      <OcrScanTab
+        onAddScannedIngredients={ctx.addScanned}
+        onNavigateToFridge={() => navigate('/fridge')}
+      />
+    </>
   )
 }
 
@@ -259,14 +269,17 @@ function RecipeRoute() {
   const ctx = useAppContext()
   const navigate = useNavigate()
   return (
-    <RecipeTab
-      recipes={ctx.recipes}
-      ingredients={ctx.ingredients}
-      onAddToCart={ctx.addToCart}
-      onNavigateToCart={() => navigate('/cart')}
-      selectedRecipeModal={ctx.selectedRecipeModal}
-      onCloseRecipeModal={() => ctx.setSelectedRecipeModal(null)}
-    />
+    <>
+      <SeoHead title="AI 레시피 추천" description="보유 식재료 매칭률 및 유통기한 임박 재료 기반 AI 레시피 파먹기" />
+      <RecipeTab
+        recipes={ctx.recipes}
+        ingredients={ctx.ingredients}
+        onAddToCart={ctx.addToCart}
+        onNavigateToCart={() => navigate('/cart')}
+        selectedRecipeModal={ctx.selectedRecipeModal}
+        onCloseRecipeModal={() => ctx.setSelectedRecipeModal(null)}
+      />
+    </>
   )
 }
 
@@ -274,14 +287,17 @@ function CartRoute() {
   const ctx = useAppContext()
   const navigate = useNavigate()
   return (
-    <CartTab
-      cartItems={ctx.cartItems}
-      onToggleItem={ctx.toggleCartItem}
-      onRemoveItem={ctx.removeCartItem}
-      onClearCart={ctx.clearCart}
-      onPurchaseComplete={ctx.purchaseComplete}
-      onNavigateToFridge={() => navigate('/fridge')}
-    />
+    <>
+      <SeoHead title="장바구니" description="부족한 식재료 쿠팡 장보기 및 구매 완료 식재료 냉장고 반영" />
+      <CartTab
+        cartItems={ctx.cartItems}
+        onToggleItem={ctx.toggleCartItem}
+        onRemoveItem={ctx.removeCartItem}
+        onClearCart={ctx.clearCart}
+        onPurchaseComplete={ctx.purchaseComplete}
+        onNavigateToFridge={() => navigate('/fridge')}
+      />
+    </>
   )
 }
 

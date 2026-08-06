@@ -1,0 +1,18 @@
+{
+  "name": "냉장이 - AI 냉장고 식재료 스캔 & 레시피 추천",
+  "short_name": "냉장이",
+  "description": "영수증 스캔으로 식재료를 자동 관리하고, 남은 재료 기반 AI 레시피 추천과 쿠팡 장보기까지 연결하는 모바일 식생활 도우미",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "32x32",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#10b981",
+  "orientation": "portrait"
+}
