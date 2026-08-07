@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Lock, Sparkles, CheckCircle2, ShieldCheck, ExternalLink } from 'lucide-react'
+import { Lock, Sparkles, CheckCircle2, ShieldCheck, ExternalLink, AlertCircle, Loader2 } from 'lucide-react'
 import { NaengjangiCharacter } from './NaengjangiCharacter'
 import { useAppContext } from '../layout/outletContext'
 import { useAuth } from '../auth/AuthContext'
@@ -37,6 +37,8 @@ export function ShopScreen() {
   const [ownedIds, setOwnedIds] = useState<Set<number>>(new Set([4]))
   const [proStatus, setProStatusState] = useState(getProMembership)
   const [showSuccessToast, setShowSuccessToast] = useState(false)
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
   // Handle URL callback from Polar Sandbox Checkout redirect
   useEffect(() => {
@@ -56,8 +58,14 @@ export function ShopScreen() {
     setOwnedIds((prev) => new Set(prev).add(item.id))
   }
 
-  const handlePolarCheckout = () => {
-    openPolarSandboxCheckout({ customerEmail: user?.email })
+  const handlePolarCheckout = async () => {
+    setIsCheckoutLoading(true)
+    setCheckoutError(null)
+    const result = await openPolarSandboxCheckout({ customerEmail: user?.email })
+    setIsCheckoutLoading(false)
+    if (!result.success && result.error) {
+      setCheckoutError(result.error)
+    }
   }
 
   const handleSimulateSandboxSuccess = () => {
@@ -65,6 +73,7 @@ export function ShopScreen() {
     setProStatusState(getProMembership())
     earnBeans(500)
     setShowSuccessToast(true)
+    setCheckoutError(null)
   }
 
   return (
@@ -185,6 +194,31 @@ export function ShopScreen() {
           <div>🚫 모든 광고 제거</div>
         </div>
 
+        {checkoutError && (
+          <div
+            style={{
+              padding: '10px 12px',
+              borderRadius: '12px',
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.2)',
+              color: '#dc2626',
+              fontSize: '0.78rem',
+              lineHeight: 1.4,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+            }}
+          >
+            <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <AlertCircle size={15} /> Polar API 연결 안내
+            </div>
+            <div>{checkoutError}</div>
+            <div>
+              아래 <strong>'샌드박스 결제 성공 가상 실행'</strong> 버튼으로 프론트엔드 결제 완결 흐름을 즉시 검증하실 수 있습니다!
+            </div>
+          </div>
+        )}
+
         {proStatus.isPro ? (
           <div
             style={{
@@ -208,6 +242,7 @@ export function ShopScreen() {
             <button
               type="button"
               onClick={handlePolarCheckout}
+              disabled={isCheckoutLoading}
               style={{
                 width: '100%',
                 padding: '12px',
@@ -223,9 +258,19 @@ export function ShopScreen() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '6px',
+                opacity: isCheckoutLoading ? 0.7 : 1,
               }}
             >
-              Polar 샌드박스로 결제하기 <ExternalLink size={16} />
+              {isCheckoutLoading ? (
+                <>
+                  <Loader2 size={18} className="spin-animation" style={{ animation: 'spin 1s linear infinite' }} />
+                  Polar 결제 세션 생성 중…
+                </>
+              ) : (
+                <>
+                  Polar 샌드박스로 결제하기 <ExternalLink size={16} />
+                </>
+              )}
             </button>
 
             <button
@@ -235,12 +280,13 @@ export function ShopScreen() {
                 border: 'none',
                 background: 'none',
                 color: 'var(--text-muted)',
-                fontSize: '0.75rem',
+                fontSize: '0.78rem',
                 cursor: 'pointer',
                 textDecoration: 'underline',
+                padding: '4px',
               }}
             >
-              [개발자 테스트] 샌드박스 결제 성공 가상 실행
+              ⚡ [테스트] 샌드박스 결제 성공 즉시 활성화
             </button>
           </div>
         )}
