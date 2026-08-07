@@ -124,7 +124,9 @@ export async function createCheckoutSession(customerEmail?: string): Promise<{ u
           if (data?.url) return { url: data.url, error: null }
         } else {
           const errData = await res.json().catch(() => null)
-          const detail = errData?.detail || errData?.message || JSON.stringify(errData) || res.statusText
+          const detail = typeof errData?.detail === 'object'
+            ? JSON.stringify(errData.detail)
+            : errData?.detail || errData?.message || (errData ? JSON.stringify(errData) : res.statusText)
           errorLogs.push(`[${baseUrl} Status ${res.status}] ${detail}`)
         }
       } catch (err) {
