@@ -29,9 +29,15 @@ export type ProMembershipStatus = {
   checkoutId?: string
 }
 
-export function getProMembership(): ProMembershipStatus {
+export function getProMembershipKey(userId?: string | null): string {
+  if (!userId) return PRO_MEMBERSHIP_KEY
+  return `${PRO_MEMBERSHIP_KEY}_${userId}`
+}
+
+export function getProMembership(userId?: string | null): ProMembershipStatus {
   try {
-    const saved = localStorage.getItem(PRO_MEMBERSHIP_KEY)
+    const key = getProMembershipKey(userId)
+    const saved = localStorage.getItem(key)
     if (!saved) return { isPro: false, subscribedAt: null }
     return JSON.parse(saved)
   } catch {
@@ -39,13 +45,14 @@ export function getProMembership(): ProMembershipStatus {
   }
 }
 
-export function setProMembership(isPro: boolean, checkoutId?: string): ProMembershipStatus {
+export function setProMembership(isPro: boolean, userId?: string | null, checkoutId?: string): ProMembershipStatus {
+  const key = getProMembershipKey(userId)
   const status: ProMembershipStatus = {
     isPro,
     subscribedAt: isPro ? new Date().toISOString() : null,
     checkoutId,
   }
-  localStorage.setItem(PRO_MEMBERSHIP_KEY, JSON.stringify(status))
+  localStorage.setItem(key, JSON.stringify(status))
   return status
 }
 

@@ -31,11 +31,13 @@ const isUnlocked = (stage: GrowthStage) =>
 
 export function ShopScreen() {
   const { user } = useAuth()
+  const userId = user?.id || user?.email || null
+
   const { beans, spendBeans, earnBeans } = useAppContext()
   const [searchParams, setSearchParams] = useSearchParams()
 
   const [ownedIds, setOwnedIds] = useState<Set<number>>(new Set([4]))
-  const [proStatus, setProStatusState] = useState(getProMembership)
+  const [proStatus, setProStatusState] = useState(() => getProMembership(userId))
   const [showSuccessToast, setShowSuccessToast] = useState(false)
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
@@ -48,17 +50,22 @@ export function ShopScreen() {
   )
   const [showConfigDrawer, setShowConfigDrawer] = useState(false)
 
+  // Re-sync membership when logged in user changes
+  useEffect(() => {
+    setProStatusState(getProMembership(userId))
+  }, [userId])
+
   // Handle URL callback from Polar Sandbox Checkout redirect
   useEffect(() => {
     if (searchParams.get('payment') === 'success') {
-      setProMembership(true)
-      setProStatusState(getProMembership())
+      setProMembership(true, userId)
+      setProStatusState(getProMembership(userId))
       earnBeans(500) // Grant bonus beans for subscribing
       setShowSuccessToast(true)
       searchParams.delete('payment')
       setSearchParams(searchParams, { replace: true })
     }
-  }, [searchParams, setSearchParams, earnBeans])
+  }, [searchParams, setSearchParams, earnBeans, userId])
 
   const buy = (item: ShopItem) => {
     if (ownedIds.has(item.id) || item.price > beans) return
@@ -95,8 +102,8 @@ export function ShopScreen() {
   }
 
   const handleSimulateSandboxSuccess = () => {
-    setProMembership(true)
-    setProStatusState(getProMembership())
+    setProMembership(true, userId)
+    setProStatusState(getProMembership(userId))
     earnBeans(500)
     setShowSuccessToast(true)
     setCheckoutError(null)

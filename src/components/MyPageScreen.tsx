@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bell, Clock, LogOut, ChevronRight, Sparkles, ShieldCheck, ExternalLink } from 'lucide-react'
 import { NaengjangiCharacter } from './NaengjangiCharacter'
@@ -15,10 +15,16 @@ const PREFS = [
 export function MyPageScreen() {
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
+  const userId = user?.id || user?.email || null
+
   const { beans } = useAppContext()
   const [pref, setPref] = useState<(typeof PREFS)[number]['key']>('normal')
   const [time, setTime] = useState('18:00')
-  const [proStatus] = useState(getProMembership)
+  const [proStatus, setProStatusState] = useState(() => getProMembership(userId))
+
+  useEffect(() => {
+    setProStatusState(getProMembership(userId))
+  }, [userId])
 
   const displayName =
     (user?.user_metadata?.name as string | undefined) ?? user?.email?.split('@')[0] ?? '냉장이 집사'
