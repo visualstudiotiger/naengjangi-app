@@ -1,12 +1,16 @@
-import { useState } from 'react'
-import { Lock } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { Lock, Sparkles, CheckCircle2, ShieldCheck, ExternalLink } from 'lucide-react'
 import { NaengjangiCharacter } from './NaengjangiCharacter'
 import { useAppContext } from '../layout/outletContext'
+import { useAuth } from '../auth/AuthContext'
+import {
+  POLAR_CONFIG,
+  getProMembership,
+  setProMembership,
+  openPolarSandboxCheckout,
+} from '../utils/polarPayment'
 
-/**
- * 상점 — 콩알로 냉장이 캐릭터 아이템 구매. 성장 단계 미달 아이템은 잠금.
- * (02_technical_spec.md items / shop). junho 디자인 언어로 재스타일.
- */
 const GROWTH_STAGES = ['아기', '어린이', '청소년', '20~30대', '40~50대'] as const
 type GrowthStage = (typeof GROWTH_STAGES)[number]
 const CURRENT_STAGE: GrowthStage = '어린이'
@@ -26,8 +30,25 @@ const isUnlocked = (stage: GrowthStage) =>
   GROWTH_STAGES.indexOf(stage) <= GROWTH_STAGES.indexOf(CURRENT_STAGE)
 
 export function ShopScreen() {
-  const { beans, spendBeans } = useAppContext()
+  const { user } = useAuth()
+  const { beans, spendBeans, earnBeans } = useAppContext()
+  const [searchParams, setSearchParams] = useSearchParams()
+
   const [ownedIds, setOwnedIds] = useState<Set<number>>(new Set([4]))
+  const [proStatus, setProStatusState] = useState(getProMembership)
+  const [showSuccessToast, setShowSuccessToast] = useState(false)
+
+  // Handle URL callback from Polar Sandbox Checkout redirect
+  useEffect(() => {
+    if (searchParams.get('payment') === 'success') {
+      setProMembership(true)
+      setProStatusState(getProMembership())
+      earnBeans(500) // Grant bonus beans for subscribing
+      setShowSuccessToast(true)
+      searchParams.delete('payment')
+      setSearchParams(searchParams, { replace: true })
+    }
+  }, [searchParams, setSearchParams, earnBeans])
 
   const buy = (item: ShopItem) => {
     if (ownedIds.has(item.id) || item.price > beans) return
@@ -35,8 +56,52 @@ export function ShopScreen() {
     setOwnedIds((prev) => new Set(prev).add(item.id))
   }
 
+  const handlePolarCheckout = () => {
+    openPolarSandboxCheckout({ customerEmail: user?.email })
+  }
+
+  const handleSimulateSandboxSuccess = () => {
+    setProMembership(true)
+    setProStatusState(getProMembership())
+    earnBeans(500)
+    setShowSuccessToast(true)
+  }
+
   return (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+      {/* Success Notification */}
+      {showSuccessToast && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '14px 16px',
+            borderRadius: '16px',
+            background: 'linear-gradient(135deg, #10b981, #059669)',
+            color: 'white',
+            boxShadow: '0 8px 20px rgba(16, 185, 129, 0.3)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <CheckCircle2 size={24} />
+            <div>
+              <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>Polar 샌드박스 결제 완료! 👑</div>
+              <div style={{ fontSize: '0.78rem', opacity: 0.9 }}>
+                냉장이 PRO 구독 활성화 + 🫘 콩알 500개가 지급되었습니다!
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowSuccessToast(false)}
+            style={{ border: 'none', background: 'none', color: 'white', fontWeight: 800, cursor: 'pointer' }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* 캐릭터 히어로 */}
       <div
         style={{
@@ -54,7 +119,9 @@ export function ShopScreen() {
           <NaengjangiCharacter size={72} />
         </div>
         <div>
-          <div style={{ fontSize: '1.15rem', fontWeight: 800 }}>냉장이 상점</div>
+          <div style={{ fontSize: '1.15rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
+            냉장이 상점 {proStatus.isPro && <span style={{ background: '#f59e0b', color: 'black', fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px' }}>PRO 셰프</span>}
+          </div>
           <div style={{ fontSize: '0.8rem', opacity: 0.9, marginBottom: '8px' }}>
             어린이 단계 · 콩알로 꾸며보세요
           </div>
@@ -75,7 +142,112 @@ export function ShopScreen() {
         </div>
       </div>
 
+      {/* Polar Sandbox Premium Membership Banner */}
+      <div
+        className="glass-card"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+          background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(217, 119, 6, 0.06))',
+          border: '1.5px solid rgba(245, 158, 11, 0.3)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 900, color: '#d97706', fontSize: '1.05rem' }}>
+            <Sparkles size={20} /> 냉장이 PRO 프리미엄 셰프
+          </div>
+          <span
+            style={{
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              padding: '3px 8px',
+              borderRadius: '10px',
+              background: 'rgba(245, 158, 11, 0.2)',
+              color: '#b45309',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+          >
+            <ShieldCheck size={13} /> Polar Sandbox
+          </span>
+        </div>
+
+        <div style={{ fontSize: '0.82rem', color: 'var(--text-main)', lineHeight: 1.5 }}>
+          Polar 결제 시스템(Product ID: <code>{POLAR_CONFIG.productId.slice(0, 8)}…</code>)이 연동된 샌드박스 결제입니다.
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+          <div>✨ AI 무제한 레시피 생성</div>
+          <div>⚡ OCR 스캔 2배 고속 처리</div>
+          <div>🫘 콩알 +500개 즉시 지급</div>
+          <div>🚫 모든 광고 제거</div>
+        </div>
+
+        {proStatus.isPro ? (
+          <div
+            style={{
+              padding: '10px',
+              borderRadius: '12px',
+              background: 'rgba(16, 185, 129, 0.15)',
+              color: '#047857',
+              fontSize: '0.85rem',
+              fontWeight: 800,
+              textAlign: 'center',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+            }}
+          >
+            <CheckCircle2 size={18} /> 현재 PRO 셰프 멤버십 이용 중입니다
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+            <button
+              type="button"
+              onClick={handlePolarCheckout}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '14px',
+                border: 'none',
+                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                color: 'white',
+                fontSize: '0.9rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(245, 158, 11, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+              }}
+            >
+              Polar 샌드박스로 결제하기 <ExternalLink size={16} />
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSimulateSandboxSuccess}
+              style={{
+                border: 'none',
+                background: 'none',
+                color: 'var(--text-muted)',
+                fontSize: '0.75rem',
+                cursor: 'pointer',
+                textDecoration: 'underline',
+              }}
+            >
+              [개발자 테스트] 샌드박스 결제 성공 가상 실행
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* 아이템 그리드 */}
+      <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '4px 0 -6px' }}>콩알 상점 아이템</h3>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
         {SHOP_ITEMS.map((item) => {
           const owned = ownedIds.has(item.id)

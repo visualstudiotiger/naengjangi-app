@@ -28,6 +28,7 @@ export type AppOutletContext = {
 
   // 게이미피케이션 (콩알)
   spendBeans: (price: number) => void
+  earnBeans: (amount: number) => void
 }
 
 export function useAppContext() {

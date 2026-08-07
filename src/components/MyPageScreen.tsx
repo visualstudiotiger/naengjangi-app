@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Bell, Clock, LogOut, ChevronRight } from 'lucide-react'
+import { Bell, Clock, LogOut, ChevronRight, Sparkles, ShieldCheck, ExternalLink } from 'lucide-react'
 import { NaengjangiCharacter } from './NaengjangiCharacter'
 import { useAuth } from '../auth/AuthContext'
 import { useAppContext } from '../layout/outletContext'
+import { getProMembership, openPolarSandboxCheckout } from '../utils/polarPayment'
 
 const PREFS = [
   { key: 'quiet', label: '조용히' },
@@ -15,6 +16,7 @@ export function MyPageScreen() {
   const { beans } = useAppContext()
   const [pref, setPref] = useState<(typeof PREFS)[number]['key']>('normal')
   const [time, setTime] = useState('18:00')
+  const [proStatus] = useState(getProMembership)
 
   const displayName =
     (user?.user_metadata?.name as string | undefined) ?? user?.email?.split('@')[0] ?? '냉장이 집사'
@@ -38,11 +40,70 @@ export function MyPageScreen() {
           <NaengjangiCharacter size={72} />
         </div>
         <div>
-          <div style={{ fontSize: '1.15rem', fontWeight: 800 }}>냉장이 · 어린이 단계</div>
+          <div style={{ fontSize: '1.15rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
+            냉장이 · 어린이 단계
+            {proStatus.isPro && (
+              <span style={{ background: '#f59e0b', color: 'black', fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px' }}>
+                PRO 셰프
+              </span>
+            )}
+          </div>
           <div style={{ fontSize: '0.8rem', opacity: 0.9, marginBottom: '8px' }}>{displayName} 님과 함께 자라는 중</div>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(0,0,0,0.2)', padding: '4px 12px', borderRadius: '20px', fontWeight: 800, fontSize: '0.85rem' }}>
             🫘 콩알 {beans}
           </span>
+        </div>
+      </div>
+
+      {/* 멤버십 구독 정보 (Polar Sandbox) */}
+      <div>
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem', fontWeight: 700, marginBottom: '10px' }}>
+          <Sparkles size={18} color="#f59e0b" /> 멤버십 구독 (Polar Sandbox)
+        </h3>
+        <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>구독 상태</span>
+            <span
+              style={{
+                fontSize: '0.82rem',
+                fontWeight: 800,
+                color: proStatus.isPro ? '#059669' : 'var(--text-muted)',
+                background: proStatus.isPro ? 'rgba(16, 185, 129, 0.12)' : 'rgba(0,0,0,0.05)',
+                padding: '4px 10px',
+                borderRadius: '12px',
+              }}
+            >
+              {proStatus.isPro ? '👑 PRO 셰프 멤버십 이용 중' : '무료 회원'}
+            </span>
+          </div>
+
+          {!proStatus.isPro ? (
+            <button
+              type="button"
+              onClick={() => openPolarSandboxCheckout({ customerEmail: user?.email })}
+              style={{
+                width: '100%',
+                padding: '10px',
+                borderRadius: '12px',
+                border: 'none',
+                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                color: 'white',
+                fontSize: '0.85rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+              }}
+            >
+              Polar 샌드박스로 PRO 업그레이드 <ExternalLink size={14} />
+            </button>
+          ) : (
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <ShieldCheck size={14} color="#10b981" /> Polar 샌드박스 보안 결제로 보호되고 있습니다.
+            </div>
+          )}
         </div>
       </div>
 

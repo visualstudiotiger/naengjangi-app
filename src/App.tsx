@@ -98,6 +98,7 @@ function AppLayout() {
     selectedRecipeModal,
     setSelectedRecipeModal,
     spendBeans: (price) => setBeans((prev) => prev - price),
+    earnBeans: (amount) => setBeans((prev) => prev + amount),
   }
 
   return (
