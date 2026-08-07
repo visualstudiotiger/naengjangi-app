@@ -10,6 +10,7 @@ import {
   Sun,
   Leaf,
   User,
+  LogOut,
 } from 'lucide-react'
 import type { Ingredient, Recipe, CartItem } from './types'
 import { INITIAL_INGREDIENTS, MOCK_RECIPES } from './data/mockData'
@@ -25,10 +26,12 @@ import { LoginScreen } from './components/LoginScreen'
 import { MyPageScreen } from './components/MyPageScreen'
 import { SeoHead } from './components/SeoHead'
 import ProtectedRoute from './auth/ProtectedRoute'
+import { useAuth } from './auth/AuthContext'
 import { useAppContext, type AppOutletContext } from './layout/outletContext'
 
 /* ===================== 공통 레이아웃 (헤더 + 탭바 + 모달 + 전역 상태) ===================== */
 function AppLayout() {
+  const { user, signOut } = useAuth()
   const [isDarkMode, setIsDarkMode] = useState<boolean>(
     () => localStorage.getItem('naengjangi_dark') === '1',
   )
@@ -141,6 +144,19 @@ function AppLayout() {
           <Link to="/mypage" className="header-icon-btn" title="마이페이지">
             <User size={18} />
           </Link>
+          {user && (
+            <button
+              type="button"
+              className="header-icon-btn"
+              onClick={() => {
+                signOut()
+              }}
+              title="로그아웃"
+              style={{ color: '#e11d48' }}
+            >
+              <LogOut size={18} />
+            </button>
+          )}
         </div>
       </header>
 
