@@ -6,6 +6,7 @@
 export const POLAR_CONFIG = {
   productId: 'ba8b31d2-9209-444f-ab67-c42412679e24',
   environment: 'sandbox',
+  accessToken: import.meta.env.POLAR_ACCESS_TOKEN || import.meta.env.VITE_POLAR_ACCESS_TOKEN || '',
   sandboxApiUrl: 'https://sandbox-api.polar.sh/v1',
   sandboxCheckoutUrl: 'https://sandbox.polar.sh/checkout/ba8b31d2-9209-444f-ab67-c42412679e24',
 } as const
