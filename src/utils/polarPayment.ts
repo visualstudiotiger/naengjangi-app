@@ -57,15 +57,24 @@ export function setProMembership(isPro: boolean, userId?: string | null, checkou
 }
 
 /**
+ * Reset / Cancel PRO membership status for a user
+ */
+export function cancelProMembership(userId?: string | null): ProMembershipStatus {
+  const key = getProMembershipKey(userId)
+  localStorage.removeItem(key)
+  localStorage.removeItem(PRO_MEMBERSHIP_KEY)
+  return { isPro: false, subscribedAt: null }
+}
+
+/**
  * Creates a valid Polar Checkout Session via API POST /v1/checkouts/
  */
 export async function createCheckoutSession(customerEmail?: string): Promise<{ url: string | null; error: string | null }> {
-  // 1. If custom checkout URL is saved in localStorage, use it immediately
   if (POLAR_CONFIG.customCheckoutUrl) {
     return { url: POLAR_CONFIG.customCheckoutUrl, error: null }
   }
 
-  const successUrl = `${window.location.origin}/shop?payment=success`
+  const successUrl = `${window.location.origin}/shop?checkout_id={CHECKOUT_ID}`
   const token = POLAR_CONFIG.accessToken
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -75,7 +84,6 @@ export async function createCheckoutSession(customerEmail?: string): Promise<{ u
     headers['Authorization'] = `Bearer ${token}`
   }
 
-  // Try Sandbox API endpoint first, fallback to Production API if product exists there
   const apiUrls = [POLAR_CONFIG.sandboxApiUrl, POLAR_CONFIG.productionApiUrl]
 
   for (const baseUrl of apiUrls) {

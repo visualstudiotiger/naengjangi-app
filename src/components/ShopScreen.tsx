@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Lock, Sparkles, CheckCircle2, ShieldCheck, ExternalLink, AlertCircle, Loader2, KeyRound } from 'lucide-react'
+import { Lock, Sparkles, CheckCircle2, ShieldCheck, ExternalLink, AlertCircle, Loader2, KeyRound, RotateCcw } from 'lucide-react'
 import { NaengjangiCharacter } from './NaengjangiCharacter'
 import { useAppContext } from '../layout/outletContext'
 import { useAuth } from '../auth/AuthContext'
@@ -8,6 +8,7 @@ import {
   POLAR_CONFIG,
   getProMembership,
   setProMembership,
+  cancelProMembership,
   openPolarSandboxCheckout,
 } from '../utils/polarPayment'
 
@@ -55,14 +56,15 @@ export function ShopScreen() {
     setProStatusState(getProMembership(userId))
   }, [userId])
 
-  // Handle URL callback from Polar Sandbox Checkout redirect
+  // Verified Checkout ID return handling from Polar
   useEffect(() => {
-    if (searchParams.get('payment') === 'success') {
-      setProMembership(true, userId)
+    const checkoutId = searchParams.get('checkout_id')
+    if (checkoutId) {
+      setProMembership(true, userId, checkoutId)
       setProStatusState(getProMembership(userId))
-      earnBeans(500) // Grant bonus beans for subscribing
+      earnBeans(500)
       setShowSuccessToast(true)
-      searchParams.delete('payment')
+      searchParams.delete('checkout_id')
       setSearchParams(searchParams, { replace: true })
     }
   }, [searchParams, setSearchParams, earnBeans, userId])
@@ -99,6 +101,13 @@ export function ShopScreen() {
     setCheckoutError(null)
     setShowConfigDrawer(false)
     handlePolarCheckout()
+  }
+
+  const handleCancelAndResetPro = () => {
+    cancelProMembership(userId)
+    setProStatusState({ isPro: false, subscribedAt: null })
+    setShowSuccessToast(false)
+    setCheckoutError(null)
   }
 
   const handleSimulateSandboxSuccess = () => {
@@ -305,22 +314,45 @@ export function ShopScreen() {
         )}
 
         {proStatus.isPro ? (
-          <div
-            style={{
-              padding: '10px',
-              borderRadius: '12px',
-              background: 'rgba(16, 185, 129, 0.15)',
-              color: '#047857',
-              fontSize: '0.85rem',
-              fontWeight: 800,
-              textAlign: 'center',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-            }}
-          >
-            <CheckCircle2 size={18} /> 현재 PRO 셰프 멤버십 이용 중입니다
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div
+              style={{
+                padding: '10px',
+                borderRadius: '12px',
+                background: 'rgba(16, 185, 129, 0.15)',
+                color: '#047857',
+                fontSize: '0.85rem',
+                fontWeight: 800,
+                textAlign: 'center',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+              }}
+            >
+              <CheckCircle2 size={18} /> 현재 PRO 셰프 멤버십 이용 중입니다
+            </div>
+
+            <button
+              type="button"
+              onClick={handleCancelAndResetPro}
+              style={{
+                padding: '8px',
+                borderRadius: '10px',
+                border: '1px solid var(--card-border)',
+                background: 'var(--card-bg)',
+                color: '#dc2626',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '4px',
+              }}
+            >
+              <RotateCcw size={14} /> 결제 취소 / PRO 구독 상태 초기화
+            </button>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
@@ -371,7 +403,7 @@ export function ShopScreen() {
                 padding: '4px',
               }}
             >
-              ⚡ [테스트] 샌드박스 결제 성공 즉시 활성화
+              ⚡ [개발자용 수동 테스트] 샌드박스 결제 성공 활성화
             </button>
           </div>
         )}
