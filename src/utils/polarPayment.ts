@@ -76,48 +76,67 @@ export async function createCheckoutSession(customerEmail?: string): Promise<{ u
 
   const successUrl = `${window.location.origin}/shop?checkout_id={CHECKOUT_ID}`
   const token = POLAR_CONFIG.accessToken
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  }
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`
-  }
-
-  const apiUrls = [POLAR_CONFIG.sandboxApiUrl, POLAR_CONFIG.productionApiUrl]
-
-  for (const baseUrl of apiUrls) {
-    try {
-      const res = await fetch(`${baseUrl}/checkouts/`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          product_id: POLAR_CONFIG.productId,
-          success_url: successUrl,
-          ...(customerEmail ? { customer_email: customerEmail } : {}),
-        }),
-      })
-
-      if (res.ok) {
-        const data = await res.json()
-        if (data?.url) return { url: data.url, error: null }
-      } else {
-        const errData = await res.json().catch(() => null)
-        console.warn(`Polar API (${baseUrl}) Error:`, res.status, errData)
-      }
-    } catch (err) {
-      console.warn(`Polar API (${baseUrl}) Fetch Error:`, err)
+  if (!token) {
+    return {
+      url: null,
+      error: 'Polar Organization Access Token(POLAR_ACCESS_TOKEN)이 환경 변수에 설정되어 있지 않습니다.',
     }
   }
 
-  const isTokenMissing = !token
-  const errMsg = isTokenMissing
-    ? 'Polar Organization Access Token(POLAR_ACCESS_TOKEN)이 설정되어 있지 않습니다.'
-    : 'Polar API 연결 실패: 샌드박스 프로덕트 세션을 생성할 수 없습니다. (OAT 토큰 권한 checkouts:write 필요)'
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+  }
 
+  const apiUrls = [POLAR_CONFIG.sandboxApiUrl, POLAR_CONFIG.productionApiUrl]
+  const payloadVariations = [
+    {
+      product_id: POLAR_CONFIG.productId,
+      success_url: successUrl,
+      ...(customerEmail ? { customer_email: customerEmail } : {}),
+    },
+    {
+      products: [POLAR_CONFIG.productId],
+      success_url: successUrl,
+      ...(customerEmail ? { customer_email: customerEmail } : {}),
+    },
+    {
+      product_price_id: POLAR_CONFIG.productId,
+      success_url: successUrl,
+      ...(customerEmail ? { customer_email: customerEmail } : {}),
+    },
+  ]
+
+  const errorLogs: string[] = []
+
+  for (const baseUrl of apiUrls) {
+    for (const body of payloadVariations) {
+      try {
+        const res = await fetch(`${baseUrl}/checkouts/`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(body),
+        })
+
+        if (res.ok) {
+          const data = await res.json()
+          if (data?.url) return { url: data.url, error: null }
+        } else {
+          const errData = await res.json().catch(() => null)
+          const detail = errData?.detail || errData?.message || JSON.stringify(errData) || res.statusText
+          errorLogs.push(`[${baseUrl} Status ${res.status}] ${detail}`)
+        }
+      } catch (err) {
+        errorLogs.push(`[${baseUrl} Network Error] ${err instanceof Error ? err.message : String(err)}`)
+      }
+    }
+  }
+
+  const lastErr = errorLogs.length > 0 ? errorLogs[0] : '알 수 없는 Polar API 응답 오류'
   return {
     url: null,
-    error: errMsg,
+    error: `Polar API 오류: ${lastErr}`,
   }
 }
 
@@ -129,6 +148,13 @@ export async function openPolarSandboxCheckout(options?: { customerEmail?: strin
 
   if (!url) {
     return { success: false, error: error ?? '결제 세션을 생성할 수 없습니다.' }
+  }
+
+  // Mobile / Popup Handling
+  const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+  if (isMobile) {
+    window.location.href = url
+    return { success: true }
   }
 
   const width = 520
