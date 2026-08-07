@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Bell, Clock, LogOut, ChevronRight, Sparkles, ShieldCheck, ExternalLink } from 'lucide-react'
 import { NaengjangiCharacter } from './NaengjangiCharacter'
 import { useAuth } from '../auth/AuthContext'
@@ -12,6 +13,7 @@ const PREFS = [
 ] as const
 
 export function MyPageScreen() {
+  const navigate = useNavigate()
   const { user, signOut } = useAuth()
   const { beans } = useAppContext()
   const [pref, setPref] = useState<(typeof PREFS)[number]['key']>('normal')
@@ -20,6 +22,11 @@ export function MyPageScreen() {
 
   const displayName =
     (user?.user_metadata?.name as string | undefined) ?? user?.email?.split('@')[0] ?? '냉장이 집사'
+
+  const handleLogout = async () => {
+    await signOut()
+    navigate('/login')
+  }
 
   return (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
@@ -153,36 +160,36 @@ export function MyPageScreen() {
         </div>
       </div>
 
-      {/* 계정 */}
+      {/* 계정 설정 & 로그아웃 */}
       <div>
-        <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '10px' }}>계정</h3>
-        <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '10px' }}>계정 정보</h3>
+        <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
             <span>이메일</span>
-            <span style={{ color: 'var(--text-main)' }}>{user?.email ?? '—'}</span>
+            <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{user?.email ?? '데모 게스트'}</span>
           </div>
+
           <button
             type="button"
-            onClick={signOut}
+            onClick={handleLogout}
             style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between',
+              justifyContent: 'center',
+              gap: '8px',
               width: '100%',
-              padding: '12px 0 0',
-              border: 'none',
-              borderTop: '1px solid var(--card-border)',
-              background: 'none',
+              padding: '12px',
+              borderRadius: '14px',
+              border: '1px solid rgba(225, 29, 72, 0.3)',
+              background: 'rgba(225, 29, 72, 0.08)',
               color: '#e11d48',
               fontSize: '0.9rem',
-              fontWeight: 600,
+              fontWeight: 800,
               cursor: 'pointer',
+              boxShadow: 'var(--shadow-sm)',
             }}
           >
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-              <LogOut size={18} /> 로그아웃
-            </span>
-            <ChevronRight size={16} />
+            <LogOut size={18} /> 계정 로그아웃 <ChevronRight size={16} />
           </button>
         </div>
       </div>

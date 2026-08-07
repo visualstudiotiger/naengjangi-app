@@ -31,7 +31,8 @@ import { useAppContext, type AppOutletContext } from './layout/outletContext'
 
 /* ===================== 공통 레이아웃 (헤더 + 탭바 + 모달 + 전역 상태) ===================== */
 function AppLayout() {
-  const { user, signOut } = useAuth()
+  const navigate = useNavigate()
+  const { signOut } = useAuth()
   const [isDarkMode, setIsDarkMode] = useState<boolean>(
     () => localStorage.getItem('naengjangi_dark') === '1',
   )
@@ -144,19 +145,18 @@ function AppLayout() {
           <Link to="/mypage" className="header-icon-btn" title="마이페이지">
             <User size={18} />
           </Link>
-          {user && (
-            <button
-              type="button"
-              className="header-icon-btn"
-              onClick={() => {
-                signOut()
-              }}
-              title="로그아웃"
-              style={{ color: '#e11d48' }}
-            >
-              <LogOut size={18} />
-            </button>
-          )}
+          <button
+            type="button"
+            className="header-icon-btn"
+            onClick={async () => {
+              await signOut()
+              navigate('/login')
+            }}
+            title="로그아웃"
+            style={{ color: '#e11d48' }}
+          >
+            <LogOut size={18} />
+          </button>
         </div>
       </header>
 
