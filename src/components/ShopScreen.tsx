@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Lock, Sparkles, CheckCircle2, ShieldCheck, ExternalLink, AlertCircle, Loader2 } from 'lucide-react'
+import { Lock, Sparkles, CheckCircle2, ShieldCheck, ExternalLink, AlertCircle, Loader2, KeyRound } from 'lucide-react'
 import { NaengjangiCharacter } from './NaengjangiCharacter'
 import { useAppContext } from '../layout/outletContext'
 import { useAuth } from '../auth/AuthContext'
@@ -40,6 +40,14 @@ export function ShopScreen() {
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
+  const [customInputToken, setCustomInputToken] = useState(
+    () => localStorage.getItem('naengjangi_polar_token') || ''
+  )
+  const [customCheckoutUrlInput, setCustomCheckoutUrlInput] = useState(
+    () => localStorage.getItem('naengjangi_polar_checkout_url') || ''
+  )
+  const [showConfigDrawer, setShowConfigDrawer] = useState(false)
+
   // Handle URL callback from Polar Sandbox Checkout redirect
   useEffect(() => {
     if (searchParams.get('payment') === 'success') {
@@ -66,6 +74,24 @@ export function ShopScreen() {
     if (!result.success && result.error) {
       setCheckoutError(result.error)
     }
+  }
+
+  const handleSaveCustomConfig = () => {
+    if (customInputToken) {
+      localStorage.setItem('naengjangi_polar_token', customInputToken.trim())
+    } else {
+      localStorage.removeItem('naengjangi_polar_token')
+    }
+
+    if (customCheckoutUrlInput) {
+      localStorage.setItem('naengjangi_polar_checkout_url', customCheckoutUrlInput.trim())
+    } else {
+      localStorage.removeItem('naengjangi_polar_checkout_url')
+    }
+
+    setCheckoutError(null)
+    setShowConfigDrawer(false)
+    handlePolarCheckout()
   }
 
   const handleSimulateSandboxSuccess = () => {
@@ -197,25 +223,77 @@ export function ShopScreen() {
         {checkoutError && (
           <div
             style={{
-              padding: '10px 12px',
-              borderRadius: '12px',
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.2)',
+              padding: '12px',
+              borderRadius: '14px',
+              background: 'rgba(239, 68, 68, 0.08)',
+              border: '1px solid rgba(239, 68, 68, 0.25)',
               color: '#dc2626',
-              fontSize: '0.78rem',
-              lineHeight: 1.4,
+              fontSize: '0.8rem',
+              lineHeight: 1.5,
               display: 'flex',
               flexDirection: 'column',
-              gap: '6px',
+              gap: '8px',
             }}
           >
-            <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <AlertCircle size={15} /> Polar API 연결 안내
+            <div style={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}>
+              <AlertCircle size={16} /> Polar API 연동 안내
             </div>
             <div>{checkoutError}</div>
-            <div>
-              아래 <strong>'샌드박스 결제 성공 가상 실행'</strong> 버튼으로 프론트엔드 결제 완결 흐름을 즉시 검증하실 수 있습니다!
+            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+              <button
+                type="button"
+                onClick={() => setShowConfigDrawer((v) => !v)}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid #dc2626',
+                  background: 'white',
+                  color: '#dc2626',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <KeyRound size={12} /> 토큰 / Checkout URL 설정
+              </button>
             </div>
+          </div>
+        )}
+
+        {showConfigDrawer && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', background: 'var(--surface-bg)', padding: '12px', borderRadius: '14px', border: '1px solid var(--card-border)' }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 800 }}>🔑 Polar 토큰 / Checkout Link 직접 설정</div>
+            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Polar Token (polar_oat_…):
+              <input
+                type="password"
+                value={customInputToken}
+                onChange={(e) => setCustomInputToken(e.target.value)}
+                placeholder="polar_oat_..."
+                style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--card-border)', background: 'var(--card-bg)', fontSize: '0.8rem', marginTop: '4px' }}
+              />
+            </label>
+            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              또는 Polar Checkout Link URL:
+              <input
+                type="url"
+                value={customCheckoutUrlInput}
+                onChange={(e) => setCustomCheckoutUrlInput(e.target.value)}
+                placeholder="https://sandbox.polar.sh/checkout/..."
+                style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--card-border)', background: 'var(--card-bg)', fontSize: '0.8rem', marginTop: '4px' }}
+              />
+            </label>
+            <button
+              type="button"
+              onClick={handleSaveCustomConfig}
+              className="btn-primary"
+              style={{ fontSize: '0.8rem', padding: '8px' }}
+            >
+              설정 저장 및 결제창 열기
+            </button>
           </div>
         )}
 

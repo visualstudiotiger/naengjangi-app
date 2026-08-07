@@ -6,10 +6,17 @@
 export const POLAR_CONFIG = {
   productId: 'ba8b31d2-9209-444f-ab67-c42412679e24',
   environment: 'sandbox',
-  accessToken:
-    import.meta.env.POLAR_ACCESS_TOKEN ||
-    import.meta.env.VITE_POLAR_ACCESS_TOKEN ||
-    '',
+  get accessToken(): string {
+    return (
+      localStorage.getItem('naengjangi_polar_token') ||
+      import.meta.env.POLAR_ACCESS_TOKEN ||
+      import.meta.env.VITE_POLAR_ACCESS_TOKEN ||
+      ''
+    )
+  },
+  get customCheckoutUrl(): string {
+    return localStorage.getItem('naengjangi_polar_checkout_url') || ''
+  },
   sandboxApiUrl: 'https://sandbox-api.polar.sh/v1',
   productionApiUrl: 'https://api.polar.sh/v1',
 } as const
@@ -46,13 +53,19 @@ export function setProMembership(isPro: boolean, checkoutId?: string): ProMember
  * Creates a valid Polar Checkout Session via API POST /v1/checkouts/
  */
 export async function createCheckoutSession(customerEmail?: string): Promise<{ url: string | null; error: string | null }> {
+  // 1. If custom checkout URL is saved in localStorage, use it immediately
+  if (POLAR_CONFIG.customCheckoutUrl) {
+    return { url: POLAR_CONFIG.customCheckoutUrl, error: null }
+  }
+
   const successUrl = `${window.location.origin}/shop?payment=success`
+  const token = POLAR_CONFIG.accessToken
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   }
-  
-  if (POLAR_CONFIG.accessToken) {
-    headers['Authorization'] = `Bearer ${POLAR_CONFIG.accessToken}`
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
   }
 
   // Try Sandbox API endpoint first, fallback to Production API if product exists there
@@ -65,7 +78,6 @@ export async function createCheckoutSession(customerEmail?: string): Promise<{ u
         headers,
         body: JSON.stringify({
           product_id: POLAR_CONFIG.productId,
-          products: [POLAR_CONFIG.productId],
           success_url: successUrl,
           ...(customerEmail ? { customer_email: customerEmail } : {}),
         }),
@@ -83,9 +95,14 @@ export async function createCheckoutSession(customerEmail?: string): Promise<{ u
     }
   }
 
+  const isTokenMissing = !token
+  const errMsg = isTokenMissing
+    ? 'Polar Organization Access Token(POLAR_ACCESS_TOKEN)이 설정되어 있지 않습니다.'
+    : 'Polar API 연결 실패: 샌드박스 프로덕트 세션을 생성할 수 없습니다. (OAT 토큰 권한 checkouts:write 필요)'
+
   return {
     url: null,
-    error: 'Polar API 인증 토큰(POLAR_ACCESS_TOKEN)이 필요하거나 샌드박스 프로덕트 세션을 생성할 수 없습니다.',
+    error: errMsg,
   }
 }
 
