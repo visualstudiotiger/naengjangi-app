@@ -82,6 +82,7 @@ export function ShopScreen() {
     setIsCheckoutLoading(false)
     if (!result.success && result.error) {
       setCheckoutError(result.error)
+      setShowConfigDrawer(true)
     }
   }
 
