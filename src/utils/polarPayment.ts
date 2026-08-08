@@ -84,6 +84,14 @@ export async function createCheckoutSession(customerEmail?: string): Promise<{ u
     }
   }
 
+  // Filter out fake demo domains (e.g. naengjangi.app) that fail Polar's DNS/MX domain validation
+  const isValidPublicEmail = Boolean(
+    customerEmail &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail) &&
+    !customerEmail.endsWith('@naengjangi.app') &&
+    !customerEmail.endsWith('@example.com')
+  )
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`,
@@ -92,19 +100,19 @@ export async function createCheckoutSession(customerEmail?: string): Promise<{ u
   const apiUrls = [POLAR_CONFIG.sandboxApiUrl, POLAR_CONFIG.productionApiUrl]
   const payloadVariations = [
     {
-      product_id: POLAR_CONFIG.productId,
-      success_url: successUrl,
-      ...(customerEmail ? { customer_email: customerEmail } : {}),
-    },
-    {
       products: [POLAR_CONFIG.productId],
       success_url: successUrl,
-      ...(customerEmail ? { customer_email: customerEmail } : {}),
+      ...(isValidPublicEmail ? { customer_email: customerEmail } : {}),
     },
     {
       product_price_id: POLAR_CONFIG.productId,
       success_url: successUrl,
-      ...(customerEmail ? { customer_email: customerEmail } : {}),
+      ...(isValidPublicEmail ? { customer_email: customerEmail } : {}),
+    },
+    {
+      product_id: POLAR_CONFIG.productId,
+      success_url: successUrl,
+      ...(isValidPublicEmail ? { customer_email: customerEmail } : {}),
     },
   ]
 

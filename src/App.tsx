@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState, useCallback, type ReactNode } from 'react'
 import { Routes, Route, Outlet, Navigate, NavLink, Link, useNavigate } from 'react-router-dom'
 import {
   Home,
@@ -68,6 +68,9 @@ function AppLayout() {
 
   const expiringCount = ingredients.filter((i) => getDDayInfo(i.expiryDate).days <= 3).length
 
+  const spendBeans = useCallback((price: number) => setBeans((prev) => prev - price), [])
+  const earnBeans = useCallback((amount: number) => setBeans((prev) => prev + amount), [])
+
   const ctx: AppOutletContext = {
     ingredients,
     recipes: MOCK_RECIPES,
@@ -101,8 +104,8 @@ function AppLayout() {
     },
     selectedRecipeModal,
     setSelectedRecipeModal,
-    spendBeans: (price) => setBeans((prev) => prev - price),
-    earnBeans: (amount) => setBeans((prev) => prev + amount),
+    spendBeans,
+    earnBeans,
   }
 
   return (

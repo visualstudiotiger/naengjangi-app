@@ -60,9 +60,17 @@ export function ShopScreen() {
   useEffect(() => {
     const checkoutId = searchParams.get('checkout_id')
     if (checkoutId) {
+      const processedKey = `naengjangi_checkout_reward_${checkoutId}`
+      const isAlreadyProcessed = sessionStorage.getItem(processedKey) === '1'
+
       setProMembership(true, userId, checkoutId)
       setProStatusState(getProMembership(userId))
-      earnBeans(500)
+
+      if (!isAlreadyProcessed) {
+        sessionStorage.setItem(processedKey, '1')
+        earnBeans(500)
+      }
+
       setShowSuccessToast(true)
       searchParams.delete('checkout_id')
       setSearchParams(searchParams, { replace: true })
